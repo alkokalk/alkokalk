@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AlkoKalk – kalkulator stężenia alkoholu we krwi (BAC) z grą strzelnicą">
+    <title>AlkoKalk – Strzelnica</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- NAWIGACJA ZAKŁADEK -->
+    <nav class="tabs">
+        <button class="tab active" data-tab="calculator">Kalkulator</button>
+        <button class="tab" data-tab="game">Strzelnica</button>
+        <button class="tab" data-tab="scores">Tablica wyników</button>
+        <span class="tab-title">AlkoKalk</span>
+    </nav>
+
+    <!-- ==================== KALKULATOR ==================== -->
+    <section id="calculator" class="panel active">
+        <div class="calc-grid">
+            <!-- LEWA KOLUMNA -->
+            <div class="calc-left">
+                <!-- Dane użytkownika -->
+                <div class="card">
+                    <h2 class="card-title">Dane użytkownika</h2>
+                    <div class="form-grid">
+                        <label for="weight">Waga (kg):</label>
+                        <input type="number" id="weight" min="30" max="250" value="70" step="1">
+
+                        <label for="height">Wzrost (cm):</label>
+                        <input type="number" id="height" min="120" max="230" value="175" step="1">
+
+                        <label for="age">Wiek:</label>
+                        <input type="number" id="age" min="18" max="100" value="25" step="1">
+
+                        <label for="drinkDuration">Czas picia (h):</label>
+                        <input type="number" id="drinkDuration" min="0" max="24" value="0" step="0.25">
+
+                        <label for="hoursSince">Od zakończenia (h):</label>
+                        <input type="number" id="hoursSince" min="0" max="24" value="0" step="0.5">
+
+                        <label>Płeć:</label>
+                        <div class="radio-group">
+                            <label class="radio-label">
+                                <input type="radio" name="sex" value="male" checked> Mężczyzna
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="sex" value="female"> Kobieta
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dodaj napój -->
+                <div class="card">
+                    <h2 class="card-title">Dodaj napój</h2>
+                    <select id="drinkSelect" class="drink-select"></select>
+                    <div class="drink-controls">
+                        <label for="drinkQty">Ilość:</label>
+                        <input type="number" id="drinkQty" min="1" max="20" value="1" step="1">
+                        <button id="btnAdd" class="btn btn-primary">Dodaj</button>
+                        <button id="btnClear" class="btn btn-secondary">Wyczyść</button>
+                    </div>
+                </div>
+
+                <!-- Metoda -->
+                <div class="card">
+                    <h2 class="card-title">Metoda obliczeniowa</h2>
+                    <select id="methodSelect" class="drink-select">
+                        <option value="0">Widmark (klasyczna)</option>
+                        <option value="1">Seidl (zmodyfikowana)</option>
+                    </select>
+                    <p id="methodDesc" class="method-desc"></p>
+                </div>
+            </div>
+
+            <!-- PRAWA KOLUMNA -->
+            <div class="calc-right">
+                <!-- Tabela napojów -->
+                <div class="card">
+                    <h2 class="card-title">Spożyte napoje</h2>
+                    <div class="table-wrap">
+                        <table id="drinksTable">
+                            <thead>
+                                <tr>
+                                    <th>Napój</th>
+                                    <th>Kategoria</th>
+                                    <th>Ilość</th>
+                                    <th>Alkohol (g)</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="drinksBody"></tbody>
+                        </table>
+                    </div>
+                    <p id="totalAlcohol" class="total-alcohol">Suma alkoholu: 0.0 g</p>
+                </div>
+
+                <!-- Wyniki -->
+                <div class="card card-results">
+                    <h2 class="card-title">Wyniki</h2>
+                    <p id="bacValue" class="bac-value">Twoje promile: 0.00 ‰</p>
+                    <p id="timeSober" class="time-sober">Czas do trzeźwości: 0h 0min</p>
+                    <p id="driveStatus" class="drive-status">Status: brak danych</p>
+                </div>
+
+                <!-- Porównanie metod -->
+                <div class="card">
+                    <h2 class="card-title">Porównanie metod</h2>
+                    <div id="methodComparison" class="method-comparison"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== STRZELNICA ==================== -->
+    <section id="game" class="panel">
+        <div class="game-controls">
+            <button id="btnStartRound" class="btn btn-primary">Rozpocznij rundę</button>
+            <button id="btnNewGame" class="btn btn-secondary">Nowa gra</button>
+            <span class="control-spacer"></span>
+            <label for="targetMode">Tarcza:</label>
+            <select id="targetMode">
+                <option value="static">Statyczna</option>
+                <option value="dynamic">Dynamiczna</option>
+            </select>
+            <span class="control-spacer"></span>
+            <span id="gameStatus" class="game-status">Gotowy do gry</span>
+        </div>
+        <canvas id="gameCanvas"></canvas>
+    </section>
+
+    <!-- ==================== TABLICA WYNIKÓW ==================== -->
+    <section id="scores" class="panel">
+        <div class="scores-container">
+            <h2 class="scores-title">Najlepsze wyniki</h2>
+            <p id="currentRecord" class="current-record">Aktualny rekord: brak – bądź pierwszy!</p>
+            <div class="table-wrap">
+                <table id="scoresTable">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Gracz</th>
+                            <th>Wynik</th>
+                            <th>BAC (‰)</th>
+                            <th>Tarcza</th>
+                            <th>Data</th>
+                        </tr>
+                    </thead>
+                    <tbody id="scoresBody"></tbody>
+                </table>
+            </div>
+            <div class="scores-actions">
+                <button id="btnClearScores" class="btn btn-secondary">Wyczyść wyniki</button>
+            </div>
+        </div>
+    </section>
+
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,547 @@
+/* ============================================================
+   AlkoKalk – Minimalist Blue Theme
+   ============================================================ */
+
+:root {
+    --bg-primary: #0f1119;
+    --bg-secondary: #1a1d2e;
+    --bg-card: #1e2235;
+    --bg-card-hover: #242840;
+    --bg-input: #141724;
+    --accent: #4a8fe7;
+    --accent-hover: #5da0f5;
+    --accent-glow: rgba(74, 143, 231, 0.15);
+    --text-primary: #e0e4ef;
+    --text-secondary: #8a90a8;
+    --text-muted: #555870;
+    --border: #2a2e42;
+    --green: #4cb88a;
+    --yellow: #e0b040;
+    --red: #d45555;
+    --radius: 10px;
+    --transition: 0.2s ease;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* ======================== TABS ======================== */
+
+.tabs {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 10px 16px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.tab {
+    padding: 8px 20px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: var(--transition);
+}
+
+.tab:hover {
+    background: var(--accent-glow);
+    color: var(--text-primary);
+}
+
+.tab.active {
+    background: var(--accent);
+    color: #fff;
+}
+
+.tab-title {
+    margin-left: auto;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.5px;
+}
+
+/* ======================== PANELS ======================== */
+
+.panel {
+    display: none;
+    padding: 16px;
+    min-height: calc(100vh - 52px);
+}
+
+.panel.active {
+    display: block;
+}
+
+/* ======================== CARDS ======================== */
+
+.card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-bottom: 12px;
+    transition: var(--transition);
+}
+
+.card:hover {
+    border-color: rgba(74, 143, 231, 0.3);
+}
+
+.card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+}
+
+/* ======================== CALCULATOR LAYOUT ======================== */
+
+.calc-grid {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 16px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+@media (max-width: 800px) {
+    .calc-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ======================== FORM ======================== */
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 12px;
+    align-items: center;
+}
+
+.form-grid label {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+input[type="number"],
+select {
+    width: 100%;
+    padding: 8px 10px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 13px;
+    transition: var(--transition);
+    outline: none;
+}
+
+input[type="number"]:focus,
+select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-glow);
+}
+
+.radio-group {
+    display: flex;
+    gap: 14px;
+}
+
+.radio-label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+input[type="radio"] {
+    accent-color: var(--accent);
+}
+
+/* ======================== DRINK CONTROLS ======================== */
+
+.drink-select {
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.drink-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.drink-controls label {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.drink-controls input {
+    width: 60px;
+}
+
+/* ======================== BUTTONS ======================== */
+
+.btn {
+    padding: 8px 18px;
+    border: none;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-primary {
+    background: var(--accent);
+    color: #fff;
+}
+
+.btn-primary:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(74, 143, 231, 0.3);
+}
+
+.btn-secondary {
+    background: var(--bg-input);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+}
+
+.btn-remove {
+    background: none;
+    border: none;
+    color: var(--red);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: var(--transition);
+}
+
+.btn-remove:hover {
+    background: rgba(212, 85, 85, 0.15);
+}
+
+/* ======================== TABLE ======================== */
+
+.table-wrap {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+thead th {
+    background: var(--bg-input);
+    color: var(--text-secondary);
+    font-weight: 600;
+    padding: 8px 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+tbody td {
+    padding: 7px 10px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-primary);
+}
+
+tbody tr:hover {
+    background: var(--accent-glow);
+}
+
+/* ======================== RESULTS ======================== */
+
+.total-alcohol {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+}
+
+.card-results {
+    border-color: rgba(74, 143, 231, 0.3);
+}
+
+.bac-value {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.time-sober {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+}
+
+.drive-status {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.method-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 8px;
+    line-height: 1.5;
+}
+
+/* ======================== METHOD COMPARISON ======================== */
+
+.method-comparison {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.method-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.method-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.method-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.method-bar {
+    flex: 1;
+    height: 14px;
+    background: var(--bg-input);
+    border-radius: 7px;
+    overflow: hidden;
+}
+
+.method-bar-fill {
+    height: 100%;
+    border-radius: 7px;
+    transition: width 0.4s ease;
+    min-width: 0;
+}
+
+.method-bac {
+    font-size: 13px;
+    font-weight: 600;
+    min-width: 65px;
+    text-align: right;
+}
+
+/* ======================== GAME ======================== */
+
+.game-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius);
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+}
+
+.game-controls label {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.game-controls select {
+    width: 140px;
+}
+
+.control-spacer {
+    flex: 1;
+}
+
+.game-status {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+#game.active {
+    display: flex;
+    flex-direction: column;
+    padding: 8px;
+}
+
+#gameCanvas {
+    width: 100%;
+    flex: 1;
+    border-radius: var(--radius);
+    cursor: none;
+    background: #0c0e18;
+    min-height: 500px;
+}
+
+/* ======================== SCORES ======================== */
+
+.scores-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.scores-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-align: center;
+    margin-bottom: 8px;
+}
+
+.current-record {
+    text-align: center;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 16px;
+}
+
+.scores-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12px;
+}
+
+/* ======================== SCROLLBAR ======================== */
+
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+}
+
+/* ======================== MOBILE ======================== */
+
+@media (max-width: 600px) {
+    .tabs {
+        gap: 2px;
+        padding: 8px 8px;
+    }
+    .tab {
+        padding: 7px 12px;
+        font-size: 12px;
+    }
+    .tab-title {
+        display: none;
+    }
+    .panel {
+        padding: 8px;
+    }
+    .card {
+        padding: 14px;
+    }
+    .form-grid {
+        grid-template-columns: 1fr;
+        gap: 6px;
+    }
+    .drink-controls {
+        flex-wrap: wrap;
+    }
+    .btn {
+        padding: 10px 16px;
+        font-size: 14px;
+    }
+    .bac-value {
+        font-size: 18px;
+    }
+    input[type="number"],
+    select {
+        padding: 10px 12px;
+        font-size: 15px;
+    }
+    .game-controls {
+        gap: 6px;
+        padding: 8px;
+    }
+    .game-controls .btn {
+        flex: 1;
+        min-width: 0;
+    }
+    .control-spacer {
+        display: none;
+    }
+    .game-controls select {
+        width: 100%;
+    }
+    .game-status {
+        width: 100%;
+        text-align: center;
+        margin-top: 4px;
+    }
+    #gameCanvas {
+        min-height: 350px;
+        cursor: default;
+        touch-action: none;
+    }
+    thead th, tbody td {
+        padding: 6px 6px;
+        font-size: 11px;
+    }
+    .scores-title {
+        font-size: 18px;
+    }
+    .current-record {
+        font-size: 14px;
+    }
+}
+
