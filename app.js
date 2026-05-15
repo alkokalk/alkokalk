@@ -198,11 +198,23 @@ function canvasCoords(clientX, clientY) {
   return { x: (clientX - r.left) / r.width * 800, y: (clientY - r.top) / r.height * 600 };
 }
 
+function resizeCanvas() {
+  const r = canvas.getBoundingClientRect();
+  if (r.width < 1) return;
+  const dpr = window.devicePixelRatio || 1;
+  const w = Math.round(r.width * dpr);
+  const h = Math.round(r.width * dpr * 0.75); // 4:3
+  if (canvas.width !== w || canvas.height !== h) {
+    canvas.width = w;
+    canvas.height = h;
+  }
+}
+
 function initGame() {
   canvas = document.getElementById('gameCanvas');
   ctx = canvas.getContext('2d');
-  canvas.width = 800;
-  canvas.height = 600;
+  canvas.width = 800; canvas.height = 600;
+  window.addEventListener('resize', resizeCanvas);
 
   canvas.addEventListener('mousemove', e => { const c = canvasCoords(e.clientX, e.clientY); mouseX = c.x; mouseY = c.y; });
   canvas.addEventListener('click', e => { const c = canvasCoords(e.clientX, e.clientY); mouseX = c.x; mouseY = c.y; onCanvasClick(); });
@@ -233,7 +245,12 @@ function updateGameStatus() {
 
 function gameLoop() {
   const dt = 1/60;
-  ctx.clearRect(0, 0, 800, 600);
+  resizeCanvas();
+  const W = canvas.width, H = canvas.height;
+  const sx = W/800, sy = H/600;
+  ctx.clearRect(0, 0, W, H);
+  ctx.save();
+  ctx.scale(sx, sy);
   const diff = getDifficulty();
   swayPhase += dt * (1 + diff.bac * 0.5);
   const sm = 1 - diff.lag; crossX += (mouseX - crossX) * Math.max(0.05, sm); crossY += (mouseY - crossY) * Math.max(0.05, sm);
@@ -244,6 +261,7 @@ function gameLoop() {
   if (GAME.over) drawOverlay('KONIEC GRY!', `Wynik: ${GAME.totalScore} / 300`, diff);
   else if (!GAME.active && GAME.round > 0 && !GAME.over) drawOverlay(`Runda ${GAME.round} zakończona!`, `${GAME.roundScores[GAME.roundScores.length-1]} / 100 pkt`);
   else if (GAME.round === 0 && !GAME.over) { ctx.font = '500 22px Inter'; ctx.fillStyle = 'rgba(160,170,190,0.5)'; ctx.textAlign = 'center'; ctx.fillText('Kliknij "Rozpocznij rundę"', 400, 290); ctx.fillText('aby zacząć grę', 400, 320); }
+  ctx.restore();
   requestAnimationFrame(gameLoop);
 }
 
