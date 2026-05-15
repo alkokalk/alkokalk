@@ -195,7 +195,22 @@ let swayPhase = 0, recoilT = 0, flashT = 0, feedT = 0, feedPts = 0;
 
 function canvasCoords(clientX, clientY) {
   const r = canvas.getBoundingClientRect();
-  return { x: (clientX - r.left) / r.width * 800, y: (clientY - r.top) / r.height * 600 };
+  const imgRatio = 4 / 3;
+  const elRatio = r.width / r.height;
+  
+  let dw = r.width, dh = r.height, ox = 0, oy = 0;
+  if (elRatio > imgRatio) {
+    dw = r.height * imgRatio;
+    ox = (r.width - dw) / 2;
+  } else {
+    dh = r.width / imgRatio;
+    oy = (r.height - dh) / 2;
+  }
+  
+  return { 
+    x: (clientX - r.left - ox) / dw * 800, 
+    y: (clientY - r.top - oy) / dh * 600 
+  };
 }
 
 function resizeCanvas() {
@@ -284,7 +299,9 @@ function drawRange() {
 
 function drawTarget(diff) {
   if (GAME.round <= 0 && !GAME.active) return;
-  const t = GAME.target, colors = ['#d45555','#fff','#4a8fe7','#fff','#4cb88a','#fff','#e0b040','#fff','#555','#fff'];
+  const t = GAME.target;
+  // Klasyczna tarcza łucznicza: biały -> czarny -> niebieski -> czerwony -> żółty
+  const colors = ['#ffffff', '#ffffff', '#222222', '#222222', '#3a8bf7', '#3a8bf7', '#e83131', '#e83131', '#f4d03f', '#f4d03f'];
   for (let i = 10; i >= 1; i--) {
     ctx.beginPath(); ctx.arc(t.x, t.y, t.r * i / 10, 0, Math.PI*2);
     ctx.fillStyle = colors[10-i]; ctx.fill();
@@ -395,7 +412,8 @@ function refreshScoreboard() {
       rec.style.color = '#555870';
       return;
     }
-    snap.forEach((doc, i) => {
+    let i = 0;
+    snap.forEach((doc) => {
       const s = doc.data();
       const tr = document.createElement('tr');
       if (i === 0) tr.className = 'rank-1';
@@ -405,6 +423,7 @@ function refreshScoreboard() {
       const rankIcon = i === 0 ? '🏆' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1;
       tr.innerHTML = `<td>${rankIcon}</td><td>${s.name}</td><td>${s.score}</td><td>${s.bac}</td><td>${s.mode || '-'}</td><td>${s.date}</td>`;
       tb.appendChild(tr);
+      i++;
     });
     const top = snap.docs[0].data();
     rec.textContent = `Aktualny rekord: ${top.score} pkt (${top.name})`;
