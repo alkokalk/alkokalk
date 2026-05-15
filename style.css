@@ -412,15 +412,16 @@ tbody tr:hover {
     display: flex;
     flex-direction: column;
     padding: 8px;
+    height: calc(100vh - 52px);
 }
 
 #gameCanvas {
     width: 100%;
     flex: 1;
     border-radius: var(--radius);
-    cursor: none;
+    cursor: crosshair;
     background: #0c0e18;
-    min-height: 500px;
+    display: block;
 }
 
 /* ======================== SCORES ======================== */
