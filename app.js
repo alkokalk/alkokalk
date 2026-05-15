@@ -398,7 +398,12 @@ function refreshScoreboard() {
     snap.forEach((doc, i) => {
       const s = doc.data();
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${tb.rows.length + 1}</td><td>${s.name}</td><td>${s.score}</td><td>${s.bac}</td><td>${s.mode || '-'}</td><td>${s.date}</td>`;
+      if (i === 0) tr.className = 'rank-1';
+      else if (i === 1) tr.className = 'rank-2';
+      else if (i === 2) tr.className = 'rank-3';
+      
+      const rankIcon = i === 0 ? '🏆' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1;
+      tr.innerHTML = `<td>${rankIcon}</td><td>${s.name}</td><td>${s.score}</td><td>${s.bac}</td><td>${s.mode || '-'}</td><td>${s.date}</td>`;
       tb.appendChild(tr);
     });
     const top = snap.docs[0].data();

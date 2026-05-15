@@ -139,11 +139,11 @@
         <div class="scores-container">
             <h2 class="scores-title">Najlepsze wyniki</h2>
             <p id="currentRecord" class="current-record">Aktualny rekord: brak – bądź pierwszy!</p>
-            <div class="table-wrap">
-                <table id="scoresTable">
+            <div class="table-wrap custom-scrollbar">
+                <table id="scoresTable" class="leaderboard-table">
                     <thead>
                         <tr>
-                            <th>#</th>
+                            <th>Miejsce</th>
                             <th>Gracz</th>
                             <th>Wynik</th>
                             <th>BAC (‰)</th>
@@ -153,9 +153,6 @@
                     </thead>
                     <tbody id="scoresBody"></tbody>
                 </table>
-            </div>
-            <div class="scores-actions">
-                <button id="btnClearScores" class="btn btn-secondary">Wyczyść wyniki</button>
             </div>
         </div>
     </section>
