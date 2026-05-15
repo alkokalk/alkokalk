@@ -200,8 +200,12 @@ function resizeCanvas() {
   const r = canvas.getBoundingClientRect();
   if (r.width < 1 || r.height < 1) return;
   const dpr = window.devicePixelRatio || 1;
-  canvas.width = r.width * dpr;
-  canvas.height = r.height * dpr;
+  const w = Math.round(r.width * dpr);
+  const h = Math.round(r.height * dpr);
+  if (canvas.width !== w || canvas.height !== h) {
+    canvas.width = w;
+    canvas.height = h;
+  }
 }
 
 function initGame() {
