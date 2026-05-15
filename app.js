@@ -20,8 +20,9 @@ const METHODS = [
 ];
 
 // === STATE ===
-let consumed = []; // [{drinkIdx, qty}]
+let consumed = [];
 let methodIdx = 0;
+let cachedBAC = 0;
 
 function getUser() {
   return {
@@ -99,6 +100,7 @@ function updateCalc() {
   else if (bac < 0.2) { ds.textContent = 'Możesz prowadzić (BAC < 0.2‰)'; ds.style.color = '#4cb88a'; }
   else { ds.textContent = 'NIE WOLNO PROWADZIĆ (limit 0.2‰)'; ds.style.color = '#d45555'; }
   updateMethodBars();
+  cachedBAC = bac;
 }
 
 function updateDrinksTable() {
@@ -178,7 +180,7 @@ const GAME = {
 function lerp(v, a, b, c, d) { return c + Math.max(0, Math.min(1, (v-a)/(b-a))) * (d-c); }
 
 function getDifficulty() {
-  const bac = calcBAC();
+  const bac = cachedBAC;
   return {
     bac, sway: lerp(bac,0,3,0,90), lag: lerp(bac,0,3,0,0.9),
     dev: lerp(bac,0,3,0,80), blur: lerp(bac,0,3,0,0.8), tilt: lerp(bac,0.3,3,0,8),
@@ -196,23 +198,11 @@ function canvasCoords(clientX, clientY) {
   return { x: (clientX - r.left) / r.width * 800, y: (clientY - r.top) / r.height * 600 };
 }
 
-function resizeCanvas() {
-  const r = canvas.getBoundingClientRect();
-  if (r.width < 1 || r.height < 1) return;
-  const dpr = window.devicePixelRatio || 1;
-  const w = Math.round(r.width * dpr);
-  const h = Math.round(r.height * dpr);
-  if (canvas.width !== w || canvas.height !== h) {
-    canvas.width = w;
-    canvas.height = h;
-  }
-}
-
 function initGame() {
   canvas = document.getElementById('gameCanvas');
   ctx = canvas.getContext('2d');
-  resizeCanvas();
-  window.addEventListener('resize', resizeCanvas);
+  canvas.width = 800;
+  canvas.height = 600;
 
   canvas.addEventListener('mousemove', e => { const c = canvasCoords(e.clientX, e.clientY); mouseX = c.x; mouseY = c.y; });
   canvas.addEventListener('click', e => { const c = canvasCoords(e.clientX, e.clientY); mouseX = c.x; mouseY = c.y; onCanvasClick(); });
@@ -243,25 +233,17 @@ function updateGameStatus() {
 
 function gameLoop() {
   const dt = 1/60;
-  resizeCanvas();
-  const W = canvas.width, H = canvas.height;
-  const sx = W/800, sy = H/600;
-  ctx.clearRect(0, 0, W, H);
-  ctx.save();
-  ctx.scale(sx, sy);
+  ctx.clearRect(0, 0, 800, 600);
   const diff = getDifficulty();
-  // Update crosshair (mouseX/Y already in 800x600 space)
   swayPhase += dt * (1 + diff.bac * 0.5);
   const sm = 1 - diff.lag; crossX += (mouseX - crossX) * Math.max(0.05, sm); crossY += (mouseY - crossY) * Math.max(0.05, sm);
   if (diff.sway > 0.1) { crossX += diff.sway * Math.sin(swayPhase * 3.7) * 0.3; crossY += diff.sway * Math.sin(swayPhase * 4.3) * 0.3; }
   GAME.update();
   if (recoilT > 0) recoilT -= dt; if (flashT > 0) flashT -= dt; if (feedT > 0) feedT -= dt;
-  // Draw
   drawBg(); drawRange(); drawTarget(diff); drawDrunk(diff); drawFeedback(); drawCrosshair(diff); drawHUD(diff); drawIntoxBar(diff);
   if (GAME.over) drawOverlay('KONIEC GRY!', `Wynik: ${GAME.totalScore} / 300`, diff);
   else if (!GAME.active && GAME.round > 0 && !GAME.over) drawOverlay(`Runda ${GAME.round} zakończona!`, `${GAME.roundScores[GAME.roundScores.length-1]} / 100 pkt`);
   else if (GAME.round === 0 && !GAME.over) { ctx.font = '500 22px Inter'; ctx.fillStyle = 'rgba(160,170,190,0.5)'; ctx.textAlign = 'center'; ctx.fillText('Kliknij "Rozpocznij rundę"', 400, 290); ctx.fillText('aby zacząć grę', 400, 320); }
-  ctx.restore();
   requestAnimationFrame(gameLoop);
 }
 
@@ -370,31 +352,41 @@ function drawOverlay(title, sub, diff) {
 
 function roundRect(x,y,w,h,r) { ctx.beginPath(); ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r); ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h); ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r); ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y); ctx.fill(); }
 
-// === SCOREBOARD ===
-function loadScores() { try { return JSON.parse(localStorage.getItem('alkokalk_scores')) || []; } catch { return []; } }
-function saveScores(s) { localStorage.setItem('alkokalk_scores', JSON.stringify(s.slice(0,20))); }
+// === SCOREBOARD (Firebase Firestore) ===
+const scoresRef = db.collection('scores');
 
 function onGameOver() {
   const name = prompt('Wpisz swoje imię:');
   if (!name) return;
-  const scores = loadScores();
-  scores.push({ name, score:GAME.totalScore, bac:calcBAC().toFixed(2), mode:GAME.dynamic?'Dynamiczna':'Statyczna', date:new Date().toLocaleDateString('pl-PL') });
-  scores.sort((a,b) => b.score - a.score);
-  saveScores(scores);
-  refreshScoreboard();
+  scoresRef.add({
+    name,
+    score: GAME.totalScore,
+    bac: parseFloat(cachedBAC.toFixed(2)),
+    mode: GAME.dynamic ? 'Dynamiczna' : 'Statyczna',
+    date: new Date().toLocaleDateString('pl-PL'),
+    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(() => refreshScoreboard());
 }
 
 function refreshScoreboard() {
-  const scores = loadScores();
-  const tb = document.getElementById('scoresBody'); tb.innerHTML = '';
-  scores.forEach((s, i) => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${i+1}</td><td>${s.name}</td><td>${s.score}</td><td>${s.bac}</td><td>${s.mode}</td><td>${s.date}</td>`;
-    tb.appendChild(tr);
+  scoresRef.orderBy('score', 'desc').limit(20).get().then(snap => {
+    const tb = document.getElementById('scoresBody'); tb.innerHTML = '';
+    const rec = document.getElementById('currentRecord');
+    if (snap.empty) {
+      rec.textContent = 'Aktualny rekord: brak – bądź pierwszy!';
+      rec.style.color = '#555870';
+      return;
+    }
+    snap.forEach((doc, i) => {
+      const s = doc.data();
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${tb.rows.length + 1}</td><td>${s.name}</td><td>${s.score}</td><td>${s.bac}</td><td>${s.mode || '-'}</td><td>${s.date}</td>`;
+      tb.appendChild(tr);
+    });
+    const top = snap.docs[0].data();
+    rec.textContent = `Aktualny rekord: ${top.score} pkt (${top.name})`;
+    rec.style.color = '#e0b040';
   });
-  const rec = document.getElementById('currentRecord');
-  if (scores.length) { rec.textContent = `Aktualny rekord: ${scores[0].score} pkt (${scores[0].name})`; rec.style.color = '#e0b040'; }
-  else { rec.textContent = 'Aktualny rekord: brak – bądź pierwszy!'; rec.style.color = '#555870'; }
 }
 
 // === TABS + INIT ===
@@ -411,5 +403,4 @@ function initTabs() {
 
 document.addEventListener('DOMContentLoaded', () => {
   initTabs(); initCalc(); initGame(); refreshScoreboard();
-  document.getElementById('btnClearScores').onclick = () => { if (confirm('Wyczyścić wszystkie wyniki?')) { saveScores([]); refreshScoreboard(); } };
 });
