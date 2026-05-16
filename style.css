@@ -654,8 +654,69 @@ tbody tr:hover {
 
 .chat-form {
     display: flex;
+    flex-direction: column;
     gap: 8px;
     flex-shrink: 0;
+}
+
+.chat-input-row {
+    display: flex;
+    gap: 8px;
+}
+
+.chat-img-preview-container {
+    position: relative;
+    align-self: flex-start;
+    padding: 8px;
+    background: rgba(22, 26, 40, 0.8);
+    border-radius: 8px;
+    border: 1px solid rgba(74, 143, 231, 0.3);
+    margin-bottom: 4px;
+}
+
+#chatImagePreview {
+    max-height: 80px;
+    border-radius: 4px;
+}
+
+.btn-cancel-img {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background: var(--red);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+}
+
+.btn-attach {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-primary);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0 12px;
+    transition: background 0.2s;
+}
+
+.btn-attach:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.chat-msg-image {
+    max-width: 100%;
+    border-radius: 8px;
+    margin-top: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
 
 .chat-input-name {
@@ -680,7 +741,7 @@ tbody tr:hover {
     .chat-container {
         height: calc(100vh - 160px);
     }
-    .chat-form {
+    .chat-input-row {
         flex-wrap: wrap;
     }
     .chat-input-name {

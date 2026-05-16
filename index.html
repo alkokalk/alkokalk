@@ -167,9 +167,17 @@
                 <div class="chat-placeholder">Ładowanie wiadomości...</div>
             </div>
             <form id="chatForm" class="chat-form">
-                <input type="text" id="chatName" placeholder="Twój nick" class="chat-input-name" required maxlength="20">
-                <input type="text" id="chatMsg" placeholder="Napisz coś..." class="chat-input-msg" required autocomplete="off" maxlength="150">
-                <button type="submit" class="btn btn-primary btn-send">➤</button>
+                <div id="chatImagePreviewContainer" class="chat-img-preview-container" style="display: none;">
+                    <img id="chatImagePreview" src="" alt="Podgląd">
+                    <button type="button" id="btnCancelImage" class="btn-cancel-img">✖</button>
+                </div>
+                <div class="chat-input-row">
+                    <input type="text" id="chatName" placeholder="Twój nick" class="chat-input-name" required maxlength="20">
+                    <input type="file" id="chatImageInput" accept="image/png, image/jpeg, image/gif, image/webp" style="display: none;">
+                    <button type="button" id="btnAttachImage" class="btn-attach" title="Załącz zdjęcie">📎</button>
+                    <input type="text" id="chatMsg" placeholder="Napisz coś..." class="chat-input-msg" autocomplete="off" maxlength="150">
+                    <button type="submit" id="btnSendMsg" class="btn btn-primary btn-send">➤</button>
+                </div>
             </form>
         </div>
     </section>

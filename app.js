@@ -455,27 +455,92 @@ function initChat() {
   const chatName = document.getElementById('chatName');
   const chatMsg = document.getElementById('chatMsg');
   const chatMessages = document.getElementById('chatMessages');
+  const btnAttach = document.getElementById('btnAttachImage');
+  const imageInput = document.getElementById('chatImageInput');
+  const previewContainer = document.getElementById('chatImagePreviewContainer');
+  const imagePreview = document.getElementById('chatImagePreview');
+  const btnCancelImage = document.getElementById('btnCancelImage');
+  const btnSend = document.getElementById('btnSendMsg');
 
   // Załaduj zapisany nick
   const savedName = localStorage.getItem('alkokalk_chat_name');
   if (savedName) chatName.value = savedName;
 
-  // Wysyłanie wiadomości
-  chatForm.addEventListener('submit', (e) => {
+  let selectedImageFile = null;
+
+  // Obsługa załączania obrazka
+  btnAttach.onclick = () => imageInput.click();
+  
+  imageInput.addEventListener('change', function() {
+    if (this.files && this.files[0]) {
+      selectedImageFile = this.files[0];
+      imagePreview.src = URL.createObjectURL(selectedImageFile);
+      previewContainer.style.display = 'block';
+      chatMsg.removeAttribute('required'); // tekst nie jest wymagany jak wysyłamy obrazek
+    }
+  });
+
+  btnCancelImage.onclick = () => {
+    selectedImageFile = null;
+    imageInput.value = '';
+    previewContainer.style.display = 'none';
+    chatMsg.setAttribute('required', 'true');
+  };
+
+  // Wysyłanie wiadomości (wsparcie dla Cloudinary)
+  chatForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const name = chatName.value.trim() || 'Anonim';
     const text = chatMsg.value.trim();
-    if (!text) return;
+    if (!text && !selectedImageFile) return;
 
     localStorage.setItem('alkokalk_chat_name', name);
+    
+    let imageUrl = null;
+    
+    // Zablokuj formularz podczas wysyłania
+    btnSend.disabled = true;
+    chatMsg.disabled = true;
+    const originalBtnText = btnSend.textContent;
+    btnSend.textContent = '...';
 
+    if (selectedImageFile) {
+      try {
+        const formData = new FormData();
+        formData.append('file', selectedImageFile);
+        formData.append('upload_preset', 'alkokalk_upload');
+        
+        // Bezpośredni upload z przeglądarki na Twoje Cloudinary (dzdkkw7zy)
+        const res = await fetch('https://api.cloudinary.com/v1_1/dzdkkw7zy/image/upload', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const data = await res.json();
+        if (data.secure_url) {
+          imageUrl = data.secure_url;
+        } else {
+          console.error("Błąd uploadu:", data);
+        }
+      } catch (err) {
+        console.error("Błąd sieci podczas uploadu:", err);
+      }
+    }
+
+    // Wyślij dane do Firestore
     chatRef.add({
       name: name,
       text: text,
+      imageUrl: imageUrl,
       timestamp: firebase.firestore.FieldValue.serverTimestamp()
     });
 
+    // Reset formularza
     chatMsg.value = '';
+    btnCancelImage.click(); // Czyści podgląd
+    btnSend.disabled = false;
+    chatMsg.disabled = false;
+    btnSend.textContent = originalBtnText;
   });
 
   // Odbieranie wiadomości na żywo
@@ -501,13 +566,19 @@ function initChat() {
         const date = msg.timestamp.toDate();
         timeString = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
       }
+      
+      let imgHtml = msg.imageUrl ? `<img src="${msg.imageUrl}" class="chat-msg-image" alt="Załącznik" loading="lazy">` : '';
+      let textHtml = msg.text ? `<div class="chat-msg-text">${msg.text}</div>` : '';
 
       div.innerHTML = `
         <div class="chat-msg-header">
           <span class="chat-msg-name">${msg.name}</span>
           <span class="chat-msg-time">${timeString}</span>
         </div>
-        <div class="chat-msg-bubble">${msg.text}</div>
+        <div class="chat-msg-bubble">
+            ${textHtml}
+            ${imgHtml}
+        </div>
       `;
       chatMessages.appendChild(div);
     });
