@@ -15,6 +15,8 @@
         <button class="tab" data-tab="game">Strzelnica</button>
         <button class="tab" data-tab="scores">Tablica wyników</button>
         <button class="tab" data-tab="chat">Czat</button>
+        <button class="tab" data-tab="chatPrivate">Private</button>
+        <button class="tab" data-tab="profile">Mój Profil</button>
         <span class="tab-title">AlkoKalk</span>
     </nav>
 
@@ -160,8 +162,8 @@
 
     <!-- ==================== CZAT GLOBALNY ==================== -->
     <section id="chat" class="panel">
-        <div class="chat-container">
-            <h2 class="chat-title">Tawerna (Globalny Czat)</h2>
+        <div class="chat-container" id="chatMainContainer">
+            <h2 id="chatGlobalTitle" class="chat-title" style="cursor: pointer; user-select: none;">Tawerna (Globalny Czat)</h2>
             <p class="chat-disclaimer">Wysyłając wiadomości i zdjęcia potwierdzasz, że robisz to na własną odpowiedzialność. Administrator nie ponosi odpowiedzialności za treści (UGC) generowane przez użytkowników.</p>
             <div class="chat-messages custom-scrollbar" id="chatMessages">
                 <!-- Wiadomości będą tutaj generowane -->
@@ -183,7 +185,85 @@
         </div>
     </section>
 
+    <!-- ==================== CZAT PRYWATNY ==================== -->
+    <section id="chatPrivate" class="panel">
+        <div class="chat-container">
+            <!-- Ekran Logowania do pokoju -->
+            <div id="privateAuthScreen" class="private-auth-screen">
+                <h2 class="chat-title">Prywatny Pokój</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 20px; text-align: center;">Podaj tajne hasło, aby dołączyć.</p>
+                <form id="privateAuthForm" style="display: flex; flex-direction: column; gap: 10px; align-items: center; justify-content: center; height: 100%;">
+                    <input type="password" id="privatePasswordInput" placeholder="Hasło..." required style="padding: 12px; border-radius: var(--radius); border: 1px solid rgba(74, 143, 231, 0.5); background: rgba(0,0,0,0.5); color: white; width: 200px; text-align: center; font-size: 16px;">
+                    <button type="submit" class="btn btn-primary" style="width: 200px;">Wejdź</button>
+                    <div id="privateAuthError" style="color: var(--red); font-size: 12px; display: none;">Błędne hasło!</div>
+                </form>
+            </div>
+
+            <!-- Ekran właściwego czatu -->
+            <div id="privateChatScreen" style="display: none; flex: 1; flex-direction: column;">
+                <h2 id="chatPrivateTitle" class="chat-title" style="color: var(--primary); cursor: pointer; user-select: none;">Prywatny Pokój</h2>
+                <div class="chat-messages custom-scrollbar" id="chatPrivateMessages">
+                    <div class="chat-placeholder">Ładowanie wiadomości...</div>
+                </div>
+                <form id="chatPrivateForm" class="chat-form">
+                    <div id="chatPrivateImagePreviewContainer" class="chat-img-preview-container" style="display: none;">
+                        <img id="chatPrivateImagePreview" src="" alt="Podgląd">
+                        <button type="button" id="btnPrivateCancelImage" class="btn-cancel-img">✖</button>
+                    </div>
+                    <div class="chat-input-row">
+                        <input type="text" id="chatPrivateName" placeholder="Twój nick" class="chat-input-name" required maxlength="20">
+                        <input type="file" id="chatPrivateImageInput" accept="image/png, image/jpeg, image/gif, image/webp" style="display: none;">
+                        <button type="button" id="btnPrivateAttachImage" class="btn-attach" title="Załącz zdjęcie">📎</button>
+                        <input type="text" id="chatPrivateMsg" placeholder="Napisz coś..." class="chat-input-msg" autocomplete="off" maxlength="150">
+                        <button type="submit" id="btnPrivateSendMsg" class="btn btn-primary btn-send">➤</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== PROFIL (AUTH) ==================== -->
+    <section id="profile" class="panel">
+        <div class="chat-container" style="justify-content: center; align-items: center; display: flex;">
+            
+            <!-- Widok niezalogowanego -->
+            <div id="authUnlogged" style="width: 100%; max-width: 300px;">
+                <h2 class="chat-title">Logowanie</h2>
+                <form id="authForm" style="display: flex; flex-direction: column; gap: 10px;">
+                    <input type="email" id="authEmail" placeholder="Adres e-mail" required class="chat-input-msg">
+                    <input type="password" id="authPassword" placeholder="Hasło" required class="chat-input-msg">
+                    <input type="text" id="authNick" placeholder="Twój Nick (tylko przy rejestracji)" class="chat-input-msg" maxlength="20">
+                    <div style="display: flex; gap: 10px; margin-top: 10px;">
+                        <button type="submit" id="btnLogin" class="btn btn-primary" style="flex: 1;">Zaloguj</button>
+                        <button type="button" id="btnRegister" class="btn" style="flex: 1; background: var(--bg-card);">Zarejestruj</button>
+                    </div>
+                    <div id="authError" style="color: var(--red); font-size: 12px; display: none; margin-top: 5px;"></div>
+                </form>
+            </div>
+
+            <!-- Widok zalogowanego -->
+            <div id="authLogged" style="display: none; width: 100%; max-width: 300px; flex-direction: column; align-items: center; gap: 15px;">
+                <h2 class="chat-title">Twój Profil</h2>
+                
+                <div id="profileAvatarContainer" style="position: relative;">
+                    <div id="profileAvatar" class="chat-msg-avatar" style="width: 80px; height: 80px; font-size: 32px; margin: 0 auto; background-size: cover; background-position: center;">?</div>
+                    <button id="btnChangeAvatar" style="position: absolute; bottom: 0; right: 0; background: var(--primary); border: none; border-radius: 50%; width: 24px; height: 24px; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.5);">📷</button>
+                    <input type="file" id="profileAvatarInput" accept="image/png, image/jpeg, image/webp" style="display: none;">
+                </div>
+
+                <div style="text-align: center;">
+                    <h3 id="profileNickDisplay" style="color: var(--text-primary); margin: 0;">Nick</h3>
+                    <div id="profileEmailDisplay" style="color: var(--text-secondary); font-size: 12px;">email</div>
+                </div>
+
+                <button id="btnLogout" class="btn" style="background: var(--red); width: 100%; margin-top: 10px;">Wyloguj się</button>
+            </div>
+
+        </div>
+    </section>
+
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
     <script>
       firebase.initializeApp({

@@ -444,7 +444,195 @@ function initTabs() {
         const msgs = document.getElementById('chatMessages');
         msgs.scrollTop = msgs.scrollHeight;
       }
+      if (t.dataset.tab === 'chatPrivate') {
+        const msgs = document.getElementById('chatPrivateMessages');
+        msgs.scrollTop = msgs.scrollHeight;
+      }
     };
+  });
+}
+
+// === ADMIN MODE (Easter Egg) ===
+const SECRET_ADMIN_PASSWORD = 'hq854';
+let adminClickCount = 0;
+let adminClickTimer = null;
+
+function checkAdminStatus() {
+  if (localStorage.getItem('alkokalk_admin') === 'true') {
+    document.body.classList.add('admin-mode');
+  }
+}
+
+function handleAdminEasterEgg() {
+  adminClickCount++;
+  if (adminClickTimer) clearTimeout(adminClickTimer);
+  
+  if (adminClickCount >= 3) {
+    adminClickCount = 0;
+
+    // Sprawdzenie czy już jesteśmy adminem (wtedy wyłączamy)
+    if (document.body.classList.contains('admin-mode')) {
+      if (confirm('Czy chcesz wyjść z trybu Administratora?')) {
+        localStorage.removeItem('alkokalk_admin');
+        document.body.classList.remove('admin-mode');
+        alert('Tryb Administratora wyłączony.');
+      }
+      return;
+    }
+
+    // Logika włączania admina
+    const pass = prompt('Podaj hasło administratora:');
+    if (pass === SECRET_ADMIN_PASSWORD) {
+      localStorage.setItem('alkokalk_admin', 'true');
+      document.body.classList.add('admin-mode');
+      alert('Tryb Administratora odblokowany!');
+    } else if (pass !== null) {
+      alert('Błędne hasło.');
+    }
+  } else {
+    adminClickTimer = setTimeout(() => { adminClickCount = 0; }, 600);
+  }
+}
+
+// === AUTH & PROFILE ===
+const auth = firebase.auth();
+const usersRef = db.collection('users');
+
+let currentUser = null;
+let currentProfile = null;
+
+function initAuth() {
+  const authUnlogged = document.getElementById('authUnlogged');
+  const authLogged = document.getElementById('authLogged');
+  const authForm = document.getElementById('authForm');
+  const authEmail = document.getElementById('authEmail');
+  const authPassword = document.getElementById('authPassword');
+  const authNick = document.getElementById('authNick');
+  const authError = document.getElementById('authError');
+  const btnLogin = document.getElementById('btnLogin');
+  const btnRegister = document.getElementById('btnRegister');
+  const btnLogout = document.getElementById('btnLogout');
+  
+  const chatNameInput = document.getElementById('chatName');
+  const chatPrivateNameInput = document.getElementById('chatPrivateName');
+
+  // Monitorowanie stanu logowania
+  auth.onAuthStateChanged(async (user) => {
+    if (user) {
+      currentUser = user;
+      // Pobieranie profilu
+      const doc = await usersRef.doc(user.uid).get();
+      if (doc.exists) {
+        currentProfile = doc.data();
+      } else {
+        currentProfile = { nick: user.email.split('@')[0], avatarUrl: null };
+      }
+      
+      authUnlogged.style.display = 'none';
+      authLogged.style.display = 'flex';
+      
+      document.getElementById('profileNickDisplay').textContent = currentProfile.nick;
+      document.getElementById('profileEmailDisplay').textContent = user.email;
+      
+      if (currentProfile.avatarUrl) {
+        document.getElementById('profileAvatar').style.backgroundImage = `url(${currentProfile.avatarUrl})`;
+        document.getElementById('profileAvatar').textContent = '';
+      } else {
+        document.getElementById('profileAvatar').style.backgroundImage = 'none';
+        document.getElementById('profileAvatar').textContent = currentProfile.nick.charAt(0).toUpperCase();
+      }
+      
+      // Zablokowanie zmiany nicku na czacie
+      if (chatNameInput) {
+        chatNameInput.value = currentProfile.nick;
+        chatNameInput.disabled = true;
+      }
+      if (chatPrivateNameInput) {
+        chatPrivateNameInput.value = currentProfile.nick;
+        chatPrivateNameInput.disabled = true;
+      }
+    } else {
+      currentUser = null;
+      currentProfile = null;
+      authUnlogged.style.display = 'block';
+      authLogged.style.display = 'none';
+      
+      if (chatNameInput) {
+        chatNameInput.value = '';
+        chatNameInput.disabled = false;
+      }
+      if (chatPrivateNameInput) {
+        chatPrivateNameInput.value = '';
+        chatPrivateNameInput.disabled = false;
+      }
+    }
+  });
+
+  authForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    authError.style.display = 'none';
+    const email = authEmail.value;
+    const pass = authPassword.value;
+    try {
+      await auth.signInWithEmailAndPassword(email, pass);
+    } catch (err) {
+      authError.textContent = 'Błąd logowania: ' + err.message;
+      authError.style.display = 'block';
+    }
+  });
+
+  btnRegister.addEventListener('click', async () => {
+    authError.style.display = 'none';
+    const email = authEmail.value;
+    const pass = authPassword.value;
+    const nick = authNick.value.trim() || email.split('@')[0];
+    
+    try {
+      const cred = await auth.createUserWithEmailAndPassword(email, pass);
+      await usersRef.doc(cred.user.uid).set({
+        nick: nick,
+        avatarUrl: null
+      });
+    } catch (err) {
+      authError.textContent = 'Błąd rejestracji: ' + err.message;
+      authError.style.display = 'block';
+    }
+  });
+
+  btnLogout.addEventListener('click', () => {
+    auth.signOut();
+  });
+
+  // Wgrywanie avatara
+  const btnChangeAvatar = document.getElementById('btnChangeAvatar');
+  const profileAvatarInput = document.getElementById('profileAvatarInput');
+  
+  btnChangeAvatar.addEventListener('click', () => profileAvatarInput.click());
+  
+  profileAvatarInput.addEventListener('change', async function() {
+    if (this.files && this.files[0] && currentUser) {
+      const file = this.files[0];
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', 'alkokalk_upload');
+      
+      try {
+        const res = await fetch('https://api.cloudinary.com/v1_1/dzdkkw7zy/image/upload', {
+          method: 'POST', body: formData
+        });
+        const data = await res.json();
+        if (data.secure_url) {
+          await usersRef.doc(currentUser.uid).update({ avatarUrl: data.secure_url });
+          // Wymuś odświeżenie
+          const doc = await usersRef.doc(currentUser.uid).get();
+          currentProfile = doc.data();
+          document.getElementById('profileAvatar').style.backgroundImage = `url(${currentProfile.avatarUrl})`;
+          document.getElementById('profileAvatar').textContent = '';
+        }
+      } catch (err) {
+        console.error("Błąd wgrywania avatara:", err);
+      }
+    }
   });
 }
 
@@ -461,6 +649,9 @@ function initChat() {
   const imagePreview = document.getElementById('chatImagePreview');
   const btnCancelImage = document.getElementById('btnCancelImage');
   const btnSend = document.getElementById('btnSendMsg');
+  const titleGlobal = document.getElementById('chatGlobalTitle');
+
+  if (titleGlobal) titleGlobal.addEventListener('click', handleAdminEasterEgg);
 
   // Załaduj zapisany nick
   const savedName = localStorage.getItem('alkokalk_chat_name');
@@ -529,9 +720,12 @@ function initChat() {
 
     // Wyślij dane do Firestore
     chatRef.add({
-      name: name,
+      name: currentProfile ? currentProfile.nick : name,
+      uid: currentUser ? currentUser.uid : null,
+      avatarUrl: currentProfile ? currentProfile.avatarUrl : null,
       text: text,
       imageUrl: imageUrl,
+      reactions: {},
       timestamp: firebase.firestore.FieldValue.serverTimestamp()
     });
 
@@ -556,30 +750,8 @@ function initChat() {
     
     snap.forEach(doc => {
       const msg = doc.data();
-      const div = document.createElement('div');
-      // Sprawdzenie czy to nasza wiadomość po nicku
-      const isSelf = msg.name === chatName.value.trim();
-      div.className = `chat-msg ${isSelf ? 'self' : 'other'}`;
-      
-      let timeString = '';
-      if (msg.timestamp) {
-        const date = msg.timestamp.toDate();
-        timeString = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-      }
-      
-      let imgHtml = msg.imageUrl ? `<img src="${msg.imageUrl}" class="chat-msg-image" alt="Załącznik" loading="lazy">` : '';
-      let textHtml = msg.text ? `<div class="chat-msg-text">${msg.text}</div>` : '';
-
-      div.innerHTML = `
-        <div class="chat-msg-header">
-          <span class="chat-msg-name">${msg.name}</span>
-          <span class="chat-msg-time">${timeString}</span>
-        </div>
-        <div class="chat-msg-bubble">
-            ${textHtml}
-            ${imgHtml}
-        </div>
-      `;
+      const isSelf = currentUser ? (msg.uid === currentUser.uid) : (msg.name === chatName.value.trim());
+      const div = createMessageElement(doc, msg, isSelf, chatRef);
       chatMessages.appendChild(div);
     });
 
@@ -588,6 +760,234 @@ function initChat() {
   });
 }
 
+// === PRIVATE CHAT (Firebase Firestore) ===
+const chatPrivateRef = db.collection('chat_private');
+
+function initPrivateChat() {
+  const authScreen = document.getElementById('privateAuthScreen');
+  const chatScreen = document.getElementById('privateChatScreen');
+  const authForm = document.getElementById('privateAuthForm');
+  const passInput = document.getElementById('privatePasswordInput');
+  const authError = document.getElementById('privateAuthError');
+  const titlePrivate = document.getElementById('chatPrivateTitle');
+
+  if (titlePrivate) titlePrivate.addEventListener('click', handleAdminEasterEgg);
+
+  // TUTAJ ZMIEŃ HASŁO DO PRYWATNEGO POKOJU:
+  const SECRET_PASSWORD = 'alko'; 
+
+  authForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (passInput.value === SECRET_PASSWORD) {
+      unlockPrivateChat();
+    } else {
+      authError.style.display = 'block';
+    }
+  });
+
+  function unlockPrivateChat() {
+    authScreen.style.display = 'none';
+    chatScreen.style.display = 'flex';
+    setupPrivateChatLogic();
+  }
+
+  function setupPrivateChatLogic() {
+    const chatForm = document.getElementById('chatPrivateForm');
+    const chatName = document.getElementById('chatPrivateName');
+    const chatMsg = document.getElementById('chatPrivateMsg');
+    const chatMessages = document.getElementById('chatPrivateMessages');
+    const btnAttach = document.getElementById('btnPrivateAttachImage');
+    const imageInput = document.getElementById('chatPrivateImageInput');
+    const previewContainer = document.getElementById('chatPrivateImagePreviewContainer');
+    const imagePreview = document.getElementById('chatPrivateImagePreview');
+    const btnCancelImage = document.getElementById('btnPrivateCancelImage');
+    const btnSend = document.getElementById('btnPrivateSendMsg');
+
+    const savedName = localStorage.getItem('alkokalk_chat_name');
+    if (savedName) chatName.value = savedName;
+
+    let selectedImageFile = null;
+
+    btnAttach.onclick = () => imageInput.click();
+    
+    imageInput.addEventListener('change', function() {
+      if (this.files && this.files[0]) {
+        selectedImageFile = this.files[0];
+        imagePreview.src = URL.createObjectURL(selectedImageFile);
+        previewContainer.style.display = 'block';
+        chatMsg.removeAttribute('required');
+      }
+    });
+
+    btnCancelImage.onclick = () => {
+      selectedImageFile = null;
+      imageInput.value = '';
+      previewContainer.style.display = 'none';
+      chatMsg.setAttribute('required', 'true');
+    };
+
+    chatForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = chatName.value.trim() || 'Anonim';
+      const text = chatMsg.value.trim();
+      if (!text && !selectedImageFile) return;
+
+      localStorage.setItem('alkokalk_chat_name', name);
+      let imageUrl = null;
+      
+      btnSend.disabled = true;
+      chatMsg.disabled = true;
+      const originalBtnText = btnSend.textContent;
+      btnSend.textContent = '...';
+
+      if (selectedImageFile) {
+        try {
+          const formData = new FormData();
+          formData.append('file', selectedImageFile);
+          formData.append('upload_preset', 'alkokalk_upload');
+          
+          const res = await fetch('https://api.cloudinary.com/v1_1/dzdkkw7zy/image/upload', {
+            method: 'POST', body: formData
+          });
+          const data = await res.json();
+          if (data.secure_url) imageUrl = data.secure_url;
+        } catch (err) {
+          console.error("Błąd uploadu:", err);
+        }
+      }
+
+      chatPrivateRef.add({
+        name: currentProfile ? currentProfile.nick : name,
+        uid: currentUser ? currentUser.uid : null,
+        avatarUrl: currentProfile ? currentProfile.avatarUrl : null,
+        text: text,
+        imageUrl: imageUrl,
+        reactions: {},
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      chatMsg.value = '';
+      btnCancelImage.click();
+      btnSend.disabled = false;
+      chatMsg.disabled = false;
+      btnSend.textContent = originalBtnText;
+    });
+
+    chatPrivateRef.orderBy('timestamp', 'asc').limitToLast(50).onSnapshot(snap => {
+      if (snap.empty) {
+        chatMessages.innerHTML = '<div class="chat-placeholder">Brak wiadomości w prywatnym pokoju.</div>';
+        return;
+      }
+      
+      chatMessages.innerHTML = '';
+      
+      snap.forEach(doc => {
+        const msg = doc.data();
+        const isSelf = currentUser ? (msg.uid === currentUser.uid) : (msg.name === chatName.value.trim());
+        const div = createMessageElement(doc, msg, isSelf, chatPrivateRef);
+        chatMessages.appendChild(div);
+      });
+
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    });
+  }
+}
+
+// === HELPER: Tworzenie HTML dla wiadomości z Reakcjami i Avatarem ===
+function createMessageElement(doc, msg, isSelf, collectionRef) {
+  const div = document.createElement('div');
+  div.className = `chat-msg ${isSelf ? 'self' : 'other'}`;
+  
+  let timeString = '';
+  if (msg.timestamp) {
+    const date = msg.timestamp.toDate();
+    timeString = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+  }
+  
+  let imgHtml = msg.imageUrl ? `<img src="${msg.imageUrl}" class="chat-msg-image" alt="Załącznik" loading="lazy">` : '';
+  let textHtml = msg.text ? `<div class="chat-msg-text">${msg.text}</div>` : '';
+
+  let avatarHtml = '';
+  if (msg.avatarUrl) {
+    avatarHtml = `<div class="chat-msg-avatar" style="background-image: url(${msg.avatarUrl}); background-size: cover; background-position: center;"></div>`;
+  } else {
+    // Avatar z pierwszej litery
+    const initial = msg.name ? msg.name.charAt(0).toUpperCase() : '?';
+    // Generowanie koloru na podstawie nicku, żeby był spójny
+    let colorHue = 0;
+    for (let i = 0; i < (msg.name || '').length; i++) colorHue += msg.name.charCodeAt(i);
+    colorHue = colorHue % 360;
+    avatarHtml = `<div class="chat-msg-avatar" style="background: hsl(${colorHue}, 60%, 50%)">${initial}</div>`;
+  }
+
+  // Renderowanie reakcji z bazy
+  let reactionsHtml = '';
+  if (msg.reactions) {
+    Object.keys(msg.reactions).forEach(emoji => {
+      const count = msg.reactions[emoji];
+      if (count > 0) {
+        reactionsHtml += `<div class="chat-reaction-badge" data-emoji="${emoji}">${emoji} ${count}</div>`;
+      }
+    });
+  }
+
+  div.innerHTML = `
+    ${avatarHtml}
+    <div class="chat-msg-content">
+      <div class="chat-msg-header">
+        <span class="chat-msg-name">${msg.name}</span>
+        <span class="chat-msg-time">${timeString}</span>
+        <button class="chat-msg-delete" title="Usuń wiadomość">🗑️</button>
+      </div>
+      <div class="chat-msg-bubble">
+          ${textHtml}
+          ${imgHtml}
+          <div class="chat-msg-actions">
+            <button class="chat-action-btn" data-emoji="👍">👍</button>
+            <button class="chat-action-btn" data-emoji="❤️">❤️</button>
+            <button class="chat-action-btn" data-emoji="😂">😂</button>
+            <button class="chat-action-btn" data-emoji="🍻">🍻</button>
+          </div>
+      </div>
+      <div class="chat-reactions-container">${reactionsHtml}</div>
+    </div>
+  `;
+
+  // Obsługa kosza
+  const delBtn = div.querySelector('.chat-msg-delete');
+  if (delBtn) {
+    delBtn.onclick = () => {
+      if (confirm('Na pewno usunąć tę wiadomość?')) {
+        collectionRef.doc(doc.id).delete().catch(err => console.error(err));
+      }
+    };
+  }
+
+  // Obsługa dodawania reakcji (z popovera)
+  div.querySelectorAll('.chat-action-btn').forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      const emoji = btn.dataset.emoji;
+      collectionRef.doc(doc.id).update({
+        [`reactions.${emoji}`]: firebase.firestore.FieldValue.increment(1)
+      }).catch(err => console.error('Błąd dodawania reakcji:', err));
+    };
+  });
+
+  // Obsługa klikania w istniejące pigułki (też dodaje +1)
+  div.querySelectorAll('.chat-reaction-badge').forEach(badge => {
+    badge.onclick = (e) => {
+      e.stopPropagation();
+      const emoji = badge.dataset.emoji;
+      collectionRef.doc(doc.id).update({
+        [`reactions.${emoji}`]: firebase.firestore.FieldValue.increment(1)
+      });
+    };
+  });
+
+  return div;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-  initTabs(); initCalc(); initGame(); refreshScoreboard(); initChat();
+  checkAdminStatus(); initTabs(); initAuth(); initCalc(); initGame(); refreshScoreboard(); initChat(); initPrivateChat();
 });
