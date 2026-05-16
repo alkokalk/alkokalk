@@ -433,16 +433,90 @@ function refreshScoreboard() {
 
 // === TABS + INIT ===
 function initTabs() {
-  document.querySelectorAll('.tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => {
+    t.onclick = () => {
+      document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-      tab.classList.add('active');
-      document.getElementById(tab.dataset.tab).classList.add('active');
+      t.classList.add('active');
+      document.getElementById(t.dataset.tab).classList.add('active');
+      if (t.dataset.tab === 'game') resizeCanvas();
+      if (t.dataset.tab === 'chat') {
+        const msgs = document.getElementById('chatMessages');
+        msgs.scrollTop = msgs.scrollHeight;
+      }
+    };
+  });
+}
+
+const chatRef = db.collection('chat');
+
+function initChat() {
+  const chatForm = document.getElementById('chatForm');
+  const chatName = document.getElementById('chatName');
+  const chatMsg = document.getElementById('chatMsg');
+  const chatMessages = document.getElementById('chatMessages');
+
+  // Załaduj zapisany nick
+  const savedName = localStorage.getItem('alkokalk_chat_name');
+  if (savedName) chatName.value = savedName;
+
+  // Wysyłanie wiadomości
+  chatForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = chatName.value.trim() || 'Anonim';
+    const text = chatMsg.value.trim();
+    if (!text) return;
+
+    localStorage.setItem('alkokalk_chat_name', name);
+
+    chatRef.add({
+      name: name,
+      text: text,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
     });
+
+    chatMsg.value = '';
+  });
+
+  // Odbieranie wiadomości na żywo
+  chatRef.orderBy('timestamp', 'asc').limitToLast(50).onSnapshot(snap => {
+    if (snap.empty) {
+      chatMessages.innerHTML = '<div class="chat-placeholder">Brak wiadomości. Napisz coś jako pierwszy!</div>';
+      return;
+    }
+    
+    // Tylko czyścimy jeśli nie mieliśmy jeszcze wiadomości, w przeciwnym razie aktualizujemy
+    // Dla prostoty nadpisujemy cały kontener, Firestore cache-uje to świetnie
+    chatMessages.innerHTML = '';
+    
+    snap.forEach(doc => {
+      const msg = doc.data();
+      const div = document.createElement('div');
+      // Sprawdzenie czy to nasza wiadomość po nicku
+      const isSelf = msg.name === chatName.value.trim();
+      div.className = `chat-msg ${isSelf ? 'self' : 'other'}`;
+      
+      let timeString = '';
+      if (msg.timestamp) {
+        const date = msg.timestamp.toDate();
+        timeString = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+      }
+
+      div.innerHTML = `
+        <div class="chat-msg-header">
+          <span class="chat-msg-name">${msg.name}</span>
+          <span class="chat-msg-time">${timeString}</span>
+        </div>
+        <div class="chat-msg-bubble">${msg.text}</div>
+      `;
+      chatMessages.appendChild(div);
+    });
+
+    // Przewiń do dołu
+    chatMessages.scrollTop = chatMessages.scrollHeight;
   });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  initTabs(); initCalc(); initGame(); refreshScoreboard();
+  initTabs(); initCalc(); initGame(); refreshScoreboard(); initChat();
 });

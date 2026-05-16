@@ -14,6 +14,7 @@
         <button class="tab active" data-tab="calculator">Kalkulator</button>
         <button class="tab" data-tab="game">Strzelnica</button>
         <button class="tab" data-tab="scores">Tablica wyników</button>
+        <button class="tab" data-tab="chat">Czat</button>
         <span class="tab-title">AlkoKalk</span>
     </nav>
 
@@ -154,6 +155,22 @@
                     <tbody id="scoresBody"></tbody>
                 </table>
             </div>
+        </div>
+    </section>
+
+    <!-- ==================== CZAT GLOBALNY ==================== -->
+    <section id="chat" class="panel">
+        <div class="chat-container">
+            <h2 class="chat-title">Tawerna (Globalny Czat)</h2>
+            <div class="chat-messages custom-scrollbar" id="chatMessages">
+                <!-- Wiadomości będą tutaj generowane -->
+                <div class="chat-placeholder">Ładowanie wiadomości...</div>
+            </div>
+            <form id="chatForm" class="chat-form">
+                <input type="text" id="chatName" placeholder="Twój nick" class="chat-input-name" required maxlength="20">
+                <input type="text" id="chatMsg" placeholder="Napisz coś..." class="chat-input-msg" required autocomplete="off" maxlength="150">
+                <button type="submit" class="btn btn-primary btn-send">➤</button>
+            </form>
         </div>
     </section>
 
