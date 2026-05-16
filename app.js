@@ -1,3 +1,17 @@
+// === UTILS ===
+function escapeHTML(str) {
+  if (typeof str !== 'string') return '';
+  return str.replace(/[&<>'"]/g, 
+    tag => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      "'": '&#39;',
+      '"': '&quot;'
+    }[tag] || tag)
+  );
+}
+
 // === DRINKS DATABASE ===
 const DRINKS = [
   { name:"Piwo jasne (500ml / 5%)", cat:"Piwo", vol:500, alc:5.0, abs:0.85 },
@@ -108,7 +122,7 @@ function updateDrinksTable() {
   consumed.forEach((c, i) => {
     const d = DRINKS[c.drinkIdx]; const g = (pureAlcG(d) * d.abs * c.qty).toFixed(1);
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${d.name}</td><td>${d.cat}</td><td>${c.qty}</td><td>${g}</td><td><button class="btn-remove" onclick="consumed.splice(${i},1);updateCalc()">×</button></td>`;
+    tr.innerHTML = `<td>${escapeHTML(d.name)}</td><td>${escapeHTML(d.cat)}</td><td>${c.qty}</td><td>${g}</td><td><button class="btn-remove" onclick="consumed.splice(${i},1);updateCalc()">×</button></td>`;
     tb.appendChild(tr);
   });
 }
@@ -421,7 +435,7 @@ function refreshScoreboard() {
       else if (i === 2) tr.className = 'rank-3';
       
       const rankIcon = i === 0 ? '🏆' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1;
-      tr.innerHTML = `<td>${rankIcon}</td><td>${s.name}</td><td>${s.score}</td><td>${s.bac}</td><td>${s.mode || '-'}</td><td>${s.date}</td>`;
+      tr.innerHTML = `<td>${rankIcon}</td><td>${escapeHTML(s.name)}</td><td>${s.score}</td><td>${s.bac}</td><td>${s.mode || '-'}</td><td>${s.date}</td>`;
       tb.appendChild(tr);
       i++;
     });
@@ -905,7 +919,7 @@ function createMessageElement(doc, msg, isSelf, collectionRef) {
   }
   
   let imgHtml = msg.imageUrl ? `<img src="${msg.imageUrl}" class="chat-msg-image" alt="Załącznik" loading="lazy">` : '';
-  let textHtml = msg.text ? `<div class="chat-msg-text">${msg.text}</div>` : '';
+  let textHtml = msg.text ? `<div class="chat-msg-text">${escapeHTML(msg.text)}</div>` : '';
 
   let avatarHtml = '';
   if (msg.avatarUrl) {
@@ -917,7 +931,7 @@ function createMessageElement(doc, msg, isSelf, collectionRef) {
     let colorHue = 0;
     for (let i = 0; i < (msg.name || '').length; i++) colorHue += msg.name.charCodeAt(i);
     colorHue = colorHue % 360;
-    avatarHtml = `<div class="chat-msg-avatar" style="background: hsl(${colorHue}, 60%, 50%)">${initial}</div>`;
+    avatarHtml = `<div class="chat-msg-avatar" style="background: hsl(${colorHue}, 60%, 50%)">${escapeHTML(initial)}</div>`;
   }
 
   // Renderowanie reakcji z bazy
@@ -935,7 +949,7 @@ function createMessageElement(doc, msg, isSelf, collectionRef) {
     ${avatarHtml}
     <div class="chat-msg-content">
       <div class="chat-msg-header">
-        <span class="chat-msg-name">${msg.name}</span>
+        <span class="chat-msg-name">${escapeHTML(msg.name)}</span>
         <span class="chat-msg-time">${timeString}</span>
         <button class="chat-msg-delete" title="Usuń wiadomość">🗑️</button>
       </div>
